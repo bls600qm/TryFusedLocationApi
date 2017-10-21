@@ -46,6 +46,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private double latitudeA;
     private double longitudeA;
 
+   Exif exifclass =new Exif();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -106,11 +108,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d("exif", "longitudeRef : " + longitudeRef);
 
                 //10進数に変換
-                latitudeA = ExifHourMinSecToDegreesLatitude(latitude);
-                longitudeA = ExifHourMinSecToDegreesLongitude(longitude);
+                latitudeA = exifclass.ExifHourMinSecToDegreesLatitude(latitude);
+                longitudeA = exifclass.ExifHourMinSecToDegreesLongitude(longitude);
 
-                Log.d("DegreeExif","latitude : " + ExifLatitudeToDegrees(latitudeRef,latitude));
-                Log.d("DegreeExif","longitude : " + ExifLongitudeToDegrees(longitudeRef,longitude));
+                Log.d("DegreeExif","latitude : " + exifclass.ExifLatitudeToDegrees(latitudeRef,latitude));
+                Log.d("DegreeExif","longitude : " + exifclass.ExifLongitudeToDegrees(longitudeRef,longitude));
 
             }
         } catch (IOException e) {
@@ -139,7 +141,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // check permission
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            Log.d("debug", "permission granted１");
+            Log.d("debug", "permission grantedです!(1)");
 
             mMap = googleMap;
             mMap.setLocationSource(this);
@@ -180,7 +182,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // check permission
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            Log.d("debug", "permission granted２");
+            Log.d("debug", "permission grantedです!(2)");
 
             // FusedLocationApi
             LocationServices.FusedLocationApi.requestLocationUpdates(
@@ -205,7 +207,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public boolean onMyLocationButtonClick() {
         Toast.makeText(this, "onMyLocationButtonClick", Toast.LENGTH_SHORT).show();
-
+        activate(onLocationChangedListener); //要るんか分からぬ
         return false;
     }
 
@@ -238,38 +240,5 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    //以下Exif情報の取得変換 ****************************************************
-    private double ExifHourMinSecToDegreesLatitude(String latitudE) {
-        String hourminsec[] = latitudE.split(",");
-        String hour[] = hourminsec[0].split("/");
-        String min[] = hourminsec[1].split("/");
-        String sec[] = hourminsec[2].split("/");
-        double dhour = (double)Integer.parseInt(hour[0]) / (double)Integer.parseInt(hour[1]);
-        double dmin = (double)Integer.parseInt(min[0]) / (double)Integer.parseInt(min[1]);
-        double dsec = (double)Integer.parseInt(sec[0]) / (double)Integer.parseInt(sec[1]);
-        double degrees = dhour + dmin / 60.0 + dsec / 3600.0;
-        return degrees;
-    }
 
-    private double ExifHourMinSecToDegreesLongitude(String longitudE) {
-        String hourminsec[] = longitudE.split(",");
-        String hour[] = hourminsec[0].split("/");
-        String min[] = hourminsec[1].split("/");
-        String sec[] = hourminsec[2].split("/");
-        double dhour = (double)Integer.parseInt(hour[0]) / (double)Integer.parseInt(hour[1]);
-        double dmin = (double)Integer.parseInt(min[0]) / (double)Integer.parseInt(min[1]);
-        double dsec = (double)Integer.parseInt(sec[0]) / (double)Integer.parseInt(sec[1]);
-        double degrees = dhour + dmin / 60.0 + dsec / 3600.0;
-        return degrees;
-    }
-
-    private String ExifLatitudeToDegrees(String ref, String latitudE) {
-        String answer = String.valueOf(ref.equals("S") ? -1.0 : 1.0 * ExifHourMinSecToDegreesLatitude(latitudE));
-        return answer;
-    }
-
-    private String ExifLongitudeToDegrees(String ref, String longitudE) {
-        String answer = String.valueOf(ref.equals("W") ? -1.0 : 1.0 * ExifHourMinSecToDegreesLongitude(longitudE));
-        return answer;
-    }
 }
