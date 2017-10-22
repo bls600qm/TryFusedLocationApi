@@ -22,13 +22,16 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+import static jp.rika.sumitomo.tryfusedlocationapi.R.id.map;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
+
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,GoogleMap.OnInfoWindowClickListener,GoogleMap.OnInfoWindowCloseListener,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         LocationListener, GoogleMap.OnMyLocationButtonClickListener, LocationSource {
 
@@ -43,8 +46,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private int locationPriority;
 
     //exif
-    private double latitudeA;
-    private double longitudeA;
+    private static double latitudeA;
+    private static double longitudeA;
+    private static double latitudeB;
+    private static double longitudeB;
+
 
    Exif exifclass =new Exif();
 
@@ -59,29 +65,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // 測位の精度、消費電力の優先度
         locationPriority = priority[1];
 
-        if(locationPriority == priority[0]){
+        if (locationPriority == priority[0]) {
             // 位置情報の精度を優先する場合
             locationRequest.setPriority(locationPriority);
             locationRequest.setInterval(5000);
             locationRequest.setFastestInterval(16);
-        }
-        else if(locationPriority == priority[1]){
+        } else if (locationPriority == priority[1]) {
             // 消費電力を考慮する場合
             locationRequest.setPriority(locationPriority);
             locationRequest.setInterval(60000);
             locationRequest.setFastestInterval(16);
-        }
-        else if(locationPriority == priority[2]){
+        } else if (locationPriority == priority[2]) {
             // "city" level accuracy
             locationRequest.setPriority(locationPriority);
-        }
-        else{
+        } else {
             // 外部からのトリガーでの測位のみ
             locationRequest.setPriority(locationPriority);
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+                .findFragmentById(map);
         mapFragment.getMapAsync(this);
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -92,14 +95,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         //assetsフォルダの写真からexif取得
         try {
-            InputStream stream_in = this.getResources().getAssets().open("sample.JPG");
-            ExifInterface exif = new ExifInterface(stream_in);
 
-            if (exif != null) {
-                String latitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);//緯度
-                String latitudeRef = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);//北緯or南緯
-                String longitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);//経度
-                String longitudeRef = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);//東経or西経
+            InputStream stream_inA = this.getResources().getAssets().open("sample.JPG");
+
+            ExifInterface exifA = new ExifInterface(stream_inA);
+
+            if (exifA != null) {
+                String latitude = exifA.getAttribute(ExifInterface.TAG_GPS_LATITUDE);//緯度
+                String latitudeRef = exifA.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);//北緯or南緯
+                String longitude = exifA.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);//経度
+                String longitudeRef = exifA.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);//東経or西経
 
                 //時,分,秒（60進数)
                 Log.d("exif", "latitude : " + latitude);
@@ -111,16 +116,48 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 latitudeA = exifclass.ExifHourMinSecToDegreesLatitude(latitude);
                 longitudeA = exifclass.ExifHourMinSecToDegreesLongitude(longitude);
 
-                Log.d("DegreeExif","latitude : " + exifclass.ExifLatitudeToDegrees(latitudeRef,latitude));
-                Log.d("DegreeExif","longitude : " + exifclass.ExifLongitudeToDegrees(longitudeRef,longitude));
+                Log.d("DegreeExif", "latitude : " + exifclass.ExifLatitudeToDegrees(latitudeRef, latitude));
+                Log.d("DegreeExif", "longitude : " + exifclass.ExifLongitudeToDegrees(longitudeRef, longitude));
 
             }
         } catch (IOException e) {
-            Log.d("exif","exif is null");
+            Log.d("exif", "exifA is null");
             e.printStackTrace();
         }
-    }
 
+        //assetsフォルダの写真からexif取得
+        try {
+            InputStream stream_inB = this.getResources().getAssets().open("nyanko.JPG");
+            ExifInterface exifB = new ExifInterface(stream_inB);
+
+            if (exifB != null) {
+                String latitude = exifB.getAttribute(ExifInterface.TAG_GPS_LATITUDE);//緯度
+                String latitudeRef = exifB.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);//北緯or南緯
+                String longitude = exifB.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);//経度
+                String longitudeRef= exifB.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);//東経or西経
+
+                //時,分,秒（60進数)
+                Log.d("exif", "latitude1 : " + latitude);
+                Log.d("exif", "latitudeRef1 : " + latitudeRef);
+                Log.d("exif", "longitude1 : " + longitude);
+                Log.d("exif", "longitudeRef1 : " + longitudeRef);
+
+                //10進数に変換
+                latitudeB = exifclass.ExifHourMinSecToDegreesLatitude(latitude);
+                longitudeB = exifclass.ExifHourMinSecToDegreesLongitude(longitude);
+
+                Log.d("DegreeExif", "latitude1 : " + exifclass.ExifLatitudeToDegrees(latitudeRef, latitude));
+                Log.d("DegreeExif", "longitude1 : " + exifclass.ExifLongitudeToDegrees(longitudeRef, longitude));
+
+
+            }
+        } catch (IOException e) {
+            Log.d("exif", "exifB is null");
+            e.printStackTrace();
+        }
+
+
+    }
     // onResumeフェーズに入ったら接続
     @Override
     protected void onResume() {
@@ -147,13 +184,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.setLocationSource(this);
             mMap.setMyLocationEnabled(true);//右上の現在位置アイコンの表示
             mMap.setOnMyLocationButtonClickListener(this);
-            //写真のマーカーをセット
-            setMarker();
+
+            setMarker();//写真のマーカーをセット
+
+            mMap.setOnInfoWindowClickListener(this);//マーカ情報をタップしたら写真出す
+            mMap.setOnInfoWindowCloseListener(this);
         }
         else{
             Log.d("debug", "permission error");
             return;
         }
+
     }
 
     @Override
@@ -207,7 +248,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public boolean onMyLocationButtonClick() {
         Toast.makeText(this, "onMyLocationButtonClick", Toast.LENGTH_SHORT).show();
-        activate(onLocationChangedListener); //要るんか分からぬ
+
         return false;
     }
 
@@ -227,18 +268,43 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     //写真の位置情報マーカー
     private void setMarker(){
         //マーカーを追加
-        LatLng markerPos = new LatLng(latitudeA,longitudeA);
-        MarkerOptions options = new MarkerOptions();
-        options.position(markerPos)
-                .title("Exif")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
-        //.icon(BitmapDescriptorFactory.fromResource(R.drawable.sample));
+        LatLng markerPosA = new LatLng(latitudeA,longitudeA);
+        LatLng markerPosB = new LatLng(latitudeB,longitudeB);
+        MarkerOptions optionsA = new MarkerOptions();
+        MarkerOptions optionsB = new MarkerOptions();
+        optionsA.position(markerPosA)
+                .title("sample")
+                .snippet("samplですな")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ROSE));
+              //  .icon(BitmapDescriptorFactory.fromResource(R.drawable.sample));
+        optionsB.position(markerPosB)
+                .title("nyanko")
+                .snippet("ネコ丸")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
 
-
-        mMap.addMarker(options);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(markerPos, 10));//10:都市 //15:街路
+        mMap.addMarker(optionsA);
+        mMap.addMarker(optionsB);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(markerPosA, 10));//10:都市 //15:街路
 
     }
+    //写真マーカ情報をタップした時の挙動
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        Toast.makeText(this, "サンプル１の画像",
+                Toast.LENGTH_SHORT).show();
+        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.sample));
+
+    }
+    @Override
+    public void onInfoWindowClose(Marker marker) {
+        Toast.makeText(this, "Close Info Window", Toast.LENGTH_SHORT).show();
+        mMap.clear();
+        setMarker();
+
+
+
+    }
+
 
 
 }
